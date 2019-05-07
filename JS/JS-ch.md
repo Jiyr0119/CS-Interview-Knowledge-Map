@@ -526,7 +526,7 @@ for ( let i=1; i<=5; i++) {
   {
     let ii = i
     setTimeout( function timer() {
-        console.log( i );
+        console.log( ii );
     }, i*1000 );
   }
   i++
@@ -615,6 +615,7 @@ console.log(b.jobs.first) // FE
 但是该方法也是有局限性的：
 
 - 会忽略 `undefined`
+- 会忽略 `symbol`
 - 不能序列化函数
 - 不能解决循环引用的对象
 
@@ -639,11 +640,12 @@ console.log(newObj)
 
 ![](https://user-gold-cdn.xitu.io/2018/3/28/1626b1ec2d3f9e41?w=840&h=100&f=png&s=30123)
 
-在遇到函数或者 `undefined` 的时候，该对象也不能正常的序列化
+在遇到函数、 `undefined` 或者 `symbol` 的时候，该对象也不能正常的序列化
 
 ```js
 let a = {
     age: undefined,
+    sex: Symbol('male'),
     jobs: function() {},
     name: 'yck'
 }
@@ -671,7 +673,9 @@ var obj = {a: 1, b: {
 }}
 // 注意该方法是异步的
 // 可以处理 undefined 和循环引用对象
-const clone = await structuralClone(obj);
+(async () => {
+  const clone = await structuralClone(obj)
+})()
 ```
 
 # 模块化
@@ -1426,7 +1430,7 @@ console.log('1', a) // -> '1' 1
 对于以上代码你可能会有疑惑，这里说明下原理
 
 - 首先函数 `b` 先执行，在执行到 `await 10` 之前变量 `a` 还是 0，因为在 `await` 内部实现了 `generators` ，`generators` 会保留堆栈中东西，所以这时候 `a = 0` 被保存了下来
-- 因为 `await` 是异步操作，所以会先执行 `console.log('1', a)`
+- 因为 `await` 是异步操作，遇到`await`就会立即返回一个`pending`状态的`Promise`对象，暂时返回执行代码的控制权，使得函数外的代码得以继续执行，所以会先执行 `console.log('1', a)`
 - 这时候同步代码执行完毕，开始执行异步代码，将保存下来的值拿出来使用，这时候 `a = 10`
 - 然后后面就是常规执行代码了
 
